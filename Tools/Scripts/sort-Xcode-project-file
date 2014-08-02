@@ -35,6 +35,7 @@ use File::Basename;
 use File::Spec;
 use File::Temp qw(tempfile);
 use Getopt::Long;
+use File::Compare;
 
 sub sortChildrenByFileName($$);
 sub sortFilesByFileName($$);
@@ -158,8 +159,13 @@ for my $projectFile (@ARGV) {
     close(IN);
     close($OUT);
 
-    unlink($projectFile) || die "Could not delete $projectFile: $!";
-    rename($tempFileName, $projectFile) || die "Could not rename $tempFileName to $projectFile: $!";
+    if (compare($projectFile, $tempFileName) == 0) {
+         print "No change made to $projectFile";
+         unlink($tempFileName) || die "Could not delete $tempFileName: $!";} 
+    else {
+        unlink($projectFile) || die "Could not delete $projectFile: $!";
+        rename($tempFileName, $projectFile) || die "Could not rename $tempFileName to $projectFile: $!";
+    }
 }
 
 exit 0;
