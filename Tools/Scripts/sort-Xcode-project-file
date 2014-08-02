@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 # Copyright (C) 2007, 2008, 2009, 2010 Apple Inc.  All rights reserved.
+# Copyright (C) 2014 Xiao Wang (wangxiao8611@gmail.com)
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -134,6 +135,19 @@ for my $projectFile (@ARGV) {
                 print $OUT sort sortChildrenByFileName @children;
             }
             print $OUT $endMarker;
+        } elsif ($line =~ /^.*Begin (PBXBuildFile|PBXFileReference) section.*$/) {
+            print $OUT $line;
+            my $endMarker = "End " . $1 . " section";
+            my @files;
+            while (my $fileLine = <IN>) {
+                if ($fileLine =~ /^.*$endMarker.*$/){
+                    $endMarker = $fileLine;
+                    last;
+                }
+                push @files, $fileLine;
+            }
+            print $OUT sort sortChildrenByFileName @files;
+            print $OUT $endMarker;
         } else {
             print $OUT $line;
         }
@@ -153,8 +167,8 @@ exit 0;
 sub sortChildrenByFileName($$)
 {
     my ($a, $b) = @_;
-    my $aFileName = $1 if $a =~ /^\s*[A-Z0-9]{24} \/\* (.+) \*\/,$/;
-    my $bFileName = $1 if $b =~ /^\s*[A-Z0-9]{24} \/\* (.+) \*\/,$/;
+    my $aFileName = $1 if $a =~ /^\s*[A-Z0-9]{24} \/\* (.+) \*\/.*$/;
+    my $bFileName = $1 if $b =~ /^\s*[A-Z0-9]{24} \/\* (.+) \*\/.*$/;
     my $aSuffix = $1 if $aFileName =~ m/\.([^.]+)$/;
     my $bSuffix = $1 if $bFileName =~ m/\.([^.]+)$/;
     if ((!$aSuffix && !$isFile{$aFileName} && $bSuffix) || ($aSuffix && !$bSuffix && !$isFile{$bFileName})) {
